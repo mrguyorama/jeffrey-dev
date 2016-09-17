@@ -1,0 +1,42 @@
+        .Define keyboard 0X2000
+        .Define screen 0X2001
+        .Define period 0X002E
+#Loop   Set #keyboard
+        Load A
+        Set 0
+        Mv Mem to B
+        Set #Loop
+        Br= A B
+        Set #screen
+        Store A
+        
+        
+        //FUNCTION CALLING
+        //Dec SP to allocate room on the stack and Store PC there, then jump to the function
+        Dec SP to SP
+        Mv SP to Mem
+        Store PC
+        Set #Func
+        Jmp
+        //dealloc room on the stack
+        Inc SP to SP
+        //END FUNCTION CALLING
+        Set #USERBASE
+        Jmp
+        
+        
+        
+#Func   Set #period
+        Mv Mem to C
+        Set #Stop
+        Br= A C
+        //BEGIN RETURN FROM FUNCTION
+        //Load return address from stack and increment it
+        //Functions are responsible for fixing up the return address
+        Mv SP to Mem
+        Load C
+        Inc C to C
+        Inc C to PC
+        
+        
+#Stop   Fault

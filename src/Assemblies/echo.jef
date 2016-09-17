@@ -1,0 +1,15 @@
+        .Define keyboard 0X2000
+        .Define screen 0X2001
+        .Define period 0X002E
+#Loop   Set #keyboard
+        Load A
+        Set 0
+        Mv Mem to B
+        Set #Loop
+        Br= A B
+        Set #screen
+        Store A
+        Set #Loop
+        Jmp
+        
+        

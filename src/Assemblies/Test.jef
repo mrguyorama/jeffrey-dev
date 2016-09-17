@@ -1,0 +1,32 @@
+        Set #TestString
+        Mv Mem to A
+        Dec SP to SP
+        Mv SP to Mem
+        Store PC
+        Set #OSWriteString
+        Jmp
+        Set #TestString
+        Mv Mem to A
+        Dec SP to SP
+        Mv SP to Mem
+        Store PC
+        Set #OSWriteString
+        Jmp
+        
+        Fault
+        
+        
+        
+#TestString .Literal 72
+        .Literal 69
+        .Literal 76
+        .Literal 76
+        .Literal 79
+        .Literal 32
+        .Literal 87
+        .Literal 79
+        .Literal 82
+        .Literal 76
+        .Literal 68
+        .Literal 0
+        

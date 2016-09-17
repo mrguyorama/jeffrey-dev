@@ -1,0 +1,14 @@
+        .Define MAX 14
+        Zero SP
+        Neg SP to SP
+        Set #MAX
+        Mv Mem to D
+#Loop   ShR SP to A
+        Add A A to A
+        Mv SP to Mem
+        Store A
+        Dec SP to SP
+        Set #Loop
+        Br<= D SP
+        Fault
+        

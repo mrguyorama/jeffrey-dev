@@ -1,0 +1,22 @@
+Set 12
+Jmp
+.var
+.var
+.var
+.var
+.var
+.var
+.var
+.var
+.var
+.var
+Set 2
+Mv Mem to A
+Mv A to Mem
+Store A
+Inc A to A
+Set 11
+Mv Mem to B
+Set 14
+Br<= A B
+Fault

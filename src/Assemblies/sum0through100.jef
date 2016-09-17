@@ -1,0 +1,18 @@
+Set 4
+Jmp
+.var
+.var
+Set 3
+Load A
+Set 2
+Load B
+Add A B to A
+Inc B to B
+Mv B to C
+Set 100
+Mv Mem to D
+Set 8
+Br<= C D
+Set 3
+Store A
+Fault

@@ -1,0 +1,65 @@
+        //Global Defines for system constants
+        .Define USERBASE 0X4000
+        .Define Keyboard 0X2000
+        .Define Screen 0X2001
+        
+        //Main boot point, bootstrapper
+        Zero SP
+        Neg SP to SP
+        Set #USERBASE
+        Jmp
+        
+        //Utility function to automate process of
+        //returning from function call
+        //callable by user processes, essentially a macro
+        //pops address of callers PC off stack and fixes it up
+        //then jumps back
+#Return Mv SP to Mem
+        Inc SP to SP
+        Load A
+        Inc A to A
+        Inc A to PC
+        
+        
+        //Reads a character from the keyboard and returns the value in D
+        //non blocking
+#OSReadCharFromKeyboard Set #Keyboard
+        Load D
+        //Char is in D, return
+        Set #Return
+        Jmp
+        
+        //Prints a character to the screen
+#OSWriteCharToScreen    Set #Screen
+        Store A
+        //Character printed, return
+        Set #Return
+        Jmp
+        
+        //Prints a null terminated string to the screen
+        //if null pointer, finish
+#OSWriteString Mv A to B
+        Zero C
+        Set #OSDoneStringPrint
+        Br= B C 
+        //else begin printing chars
+        //load in char pointed to by B
+#OSWriteStringLoop      Mv B to Mem
+        Load A
+        Zero C
+        //if char is null then done printing
+        Set #OSDoneStringPrint
+        Br= A C
+        //else call OS char print routine
+        Dec SP to SP
+        Mv SP to Mem
+        Store PC
+        Set #OSWriteCharToScreen
+        Jmp
+        //return, loop back to top and inc string pointer in B
+        Inc B to B
+        Set #OSWriteStringLoop
+        Jmp
+#OSDoneStringPrint Set #Return
+        Jmp
+        
