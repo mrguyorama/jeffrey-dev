@@ -275,7 +275,7 @@ public class Assembler {
 		int i;
 		for(i = 0; i <= array.length; i++){
 			if(i == array.length){
-				return - 1;
+				return -1;
 			}
 			if(val.equals(array[i])){
 				break;

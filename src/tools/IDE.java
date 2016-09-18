@@ -104,7 +104,8 @@ public class IDE {
 
 	/**
 	 * sends a single cycle to the virtual cpu and updates the gui
-	 */@SuppressWarnings("static-access")
+	 */
+	 @SuppressWarnings("static-access")
 	 public static void tick(){
 		 //dont do anything if the cpu has raised a fault
 		 if(cpu.faultflag == true){
@@ -697,8 +698,6 @@ public class IDE {
 	 /**
 	  * Extends the default table model, allowing for easy JTable creation 
 	  * while disallowing cell editing
-	  * @author dboucher
-	  *
 	  */
 	 static class table extends DefaultTableModel{
 		 private static final long serialVersionUID = 1L;

@@ -303,8 +303,6 @@ public class Emulator {
 	}
 	/**
 	 * Special instruction used to signal end of operation. Stops the cpu dead
-	 * @author dboucher
-	 *
 	 */
 	static class fault extends instruction{
 		@Override
