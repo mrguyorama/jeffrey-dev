@@ -1,11 +1,21 @@
 package tools;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
 import java.util.TreeMap;
 
+
+/**
+ * This program is a utility to turn files written in Jeffrey Assembly into 
+ * files that can be understood by any compliant Jeffrey implementation. It
+ * includes useful methods and functionality in order to plug it into your
+ * own application if you so wish.
+ * @author Mrguyorama
+ *
+ */
 public class Assembler {
 	//No operands
 	static String Special[] = {"Jmp", "Fault"};
@@ -31,41 +41,113 @@ public class Assembler {
 	static int Registersval[] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 	//io
-	static final String  in = "src/assemblies/test.jef";
-	static final String romfile = "src/assemblies/rom.jef";
-	static final String outfile = "a.out";
+	static String  in = "src/assemblies/test.jef";
+	static String romfile = "src/assemblies/rom.jef";
+	static String romout = "rom.out";
+	static String outfile = "user.out";
+	/**
+	 * The location in memory where "Userland" starts
+	 */
 	static final int USERBASE = 0X4000;
 
 	public static TreeMap<String, Integer> symboltable = new TreeMap<String, Integer>();
-	public static void main(String[] args) throws IOException {
-		Scanner infile = new Scanner(new File(in));
-		FileWriter out = new FileWriter(new File(outfile));
-		
-		preprocess(new Scanner(new File(romfile)), 0);
-		
-		String finalinfile = "";
-		
-		if(args != null && args.length > 0 && args[0].equalsIgnoreCase("rom")){
-			System.out.println("romburn " + in);
-			finalinfile = romfile;
-		}else{
-			System.out.println("userprgm " + in);
-			finalinfile = in;
-			preprocess(infile, USERBASE);
+	public static void main(String[] args) {
+		System.out.println(System.getProperty("user.dir"));
+		if(args.length < 4){
+			System.out.println("Missing parameters");
+			System.out.println("Correct Usage: Usersource Romsource Romout Userout");
+			System.exit(1);
 		}
 
-		infile = new Scanner(new File(finalinfile));
+		//romfile
+		String romtext = null;
+		try{
+			romtext = read(args[1]);
+			FileWriter rombin = new FileWriter(args[2]);
+			rombin.write(assembleROM(romtext));
+			rombin.flush();
+			rombin.close();
+		}catch(FileNotFoundException e){
+			System.err.println("Unable to read ROM input file at: " + args[1]);
+			System.exit(1);
+		}catch(IOException e){
+			System.err.println("Unable to Create or Write to ROM output file at: " + args[2]);
+			System.exit(1);
+		}
+		
+		//userfile
+		String usertext = null;
+		try{
+			usertext = read(args[0]);
+			FileWriter userbin = new FileWriter(args[3]);
+			userbin.write(assembleUser(romtext, usertext));
+			userbin.flush();
+			userbin.close();
+		}catch(FileNotFoundException e){
+			System.err.println("Unable to read User input file at: " + args[0]);
+			System.exit(1);
+		}catch(IOException e){
+			System.err.println("Unable to Create or Write to User output file at: " + args[3]);
+			System.exit(1);
+		}
+		
+		System.out.println("Successfully assembled ROM and User files");
+		
+	}
+	
+	/**
+	 * Assembles a string of Jeffrey assembly into a binary, treating it as a ROM image
+	 * @param romsource text to assemble
+	 * @return the assembled ROM binary
+	 */
+	public static String assembleROM(String romsource){
+		preprocess(new Scanner(romsource), 0);
+		
+		String romimage = assemble(romsource, 0);
+		
+		return romimage;
+	}
+	
+	/**
+	 * Assembles a string of Jeffrey assembly into a binary
+	 * @param romsource text to interpret as the ROM to link against
+	 * @param usersource text to treat as the source code
+	 * @return the assembled userland image binary
+	 */
+	public static String assembleUser(String romsource, String usersource){
+		preprocess(new Scanner(romsource), 0);
+		
+		preprocess(new Scanner(usersource), USERBASE);
+		
+		String userimage = assemble(usersource, USERBASE);
+		
+		return userimage;
+		
+	}
+	
+	/**
+	 * Assembles the source file into a Jeffrey compatible binary
+	 * @param source String containing the source text to be assembled
+	 * @param offset int offset that the binary should start at ie 0X4000 for Userland and 0 for ROM
+	 * @return a String representation of a Jeffrey RAM image
+	 */
+	private static String assemble(String source, int offset){
+
+		Scanner infile = new Scanner(source);
+		
+		StringBuilder out = new StringBuilder();
 
 		//this is the header defined in the logisim "ram format"
 		//http://www.cburch.com/logisim/docs/2.7/en/html/guide/mem/menu.html
 		//we do not take advantage of run length encoding at this time
-		out.write("v2.0 raw\n");
+		out.append("v2.0 raw\n");
 
 		int line = 0;
 		try{
 			while(infile.hasNextLine()){
 				Scanner lineparser = new Scanner(infile.nextLine());
 				int instruction = 0;
+				//skip empty lines
 				if(!lineparser.hasNext()){
 					line++;
 					continue;
@@ -197,8 +279,8 @@ public class Assembler {
 
 				//place our parsed instruction into the binary file in hex
 				String outdata = String.format("%04X", instruction);
-				out.write(outdata + "\n");
-				out.flush();
+				out.append(outdata + "\n");
+				lineparser.close();
 			}
 		}catch (ArrayIndexOutOfBoundsException e){
 			System.err.println("Error at line: " + line + " - Instruction or register not correct");
@@ -208,13 +290,22 @@ public class Assembler {
 			e.printStackTrace();
 		}
 
-		out.close();
 		symboltable.clear();
+		infile.close();
+		
+		
+		return out.toString();
 	}
-
-	public static void preprocess(Scanner infile, int offset){
-
-
+	
+	
+	
+	
+	/**
+	 * Takes a first pass through the source file and makes note of references and other labels for later use
+	 * @param infile Scanner containing the text to be processed
+	 * @param offset int offset the file will start at. 0 for ROM code
+	 */
+	private static void preprocess(Scanner infile, int offset){
 		//preprocess to fill symboltable
 		int line = 0;
 		while(infile.hasNextLine()){
@@ -256,19 +347,19 @@ public class Assembler {
 				//every symbol refers to the line it stands for
 				line++;
 			}
+			preprocessor.close();
 		}
 		infile.close();
 	}
 	
-
-	//check if a string array contains a string and returns its position
+	
 	/**
 	 * Checks if a string array contains a string and returns its position or -1 otherwise
 	 * @param array the String array to check in
 	 * @param val the string to look for
 	 * @return the index of the string or -1 if not found
 	 */
-	public static int contains(String[] array, String val){
+	private static int contains(String[] array, String val){
 		if(val == null || array == null){
 			return -1;
 		}
@@ -282,6 +373,23 @@ public class Assembler {
 			}
 		}
 		return i;
+	}
+	
+	/**
+	 * Returns the text content of the file at the given path
+	 * @param filepath String representation of the path of a file
+	 * @return String contents of file
+	 * @throws FileNotFoundException if the file is not found
+	 */
+	public static String read(String filepath) throws FileNotFoundException{
+		StringBuilder string = new StringBuilder();
+		File file = new File(filepath);
+		Scanner scanner = new Scanner(file);
+		while(scanner.hasNextLine()){
+			string.append(scanner.nextLine() + "\n");
+		}
+		scanner.close();
+		return string.toString();
 	}
 
 }
