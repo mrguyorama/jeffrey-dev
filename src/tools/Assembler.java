@@ -33,7 +33,10 @@ public class Assembler {
 	//io
 	static final String  in = "src/assemblies/test.jef";
 	static final String romfile = "src/assemblies/rom.jef";
-	static final String outfile = "TESTING.out";
+	static final String outfile = "a.out";
+	/**
+	 * The location in memory where "Userland" starts
+	 */
 	static final int USERBASE = 0X4000;
 
 	public static TreeMap<String, Integer> symboltable = new TreeMap<String, Integer>();
@@ -68,9 +71,39 @@ public class Assembler {
 		out.write(assembly);
 		out.flush();
 		out.close();
+		infile.close();
 		
 	}
-
+	
+	/**
+	 * Assembles a string of Jeffrey assembly into a binary, treating it as a ROM image
+	 * @param romsource text to assemble
+	 * @return the assembled ROM binary
+	 */
+	public static String assembleROM(String romsource){
+		preprocess(new Scanner(romsource), 0);
+		
+		String romimage = assemble(romsource, 0);
+		
+		return romimage;
+	}
+	
+	/**
+	 * Assembles a string of Jeffrey assembly into a binary
+	 * @param romsource text to interpret as the ROM to link against
+	 * @param usersource text to treat as the source code
+	 * @return the assembled userland image binary
+	 */
+	public static String assembleUser(String romsource, String usersource){
+		preprocess(new Scanner(romsource), 0);
+		
+		preprocess(new Scanner(usersource), USERBASE);
+		
+		String userimage = assemble(usersource, USERBASE);
+		
+		return userimage;
+		
+	}
 	
 	/**
 	 * Assembles the source file into a Jeffrey compatible binary
@@ -78,7 +111,7 @@ public class Assembler {
 	 * @param offset int offset that the binary should start at ie 0X4000 for Userland and 0 for ROM
 	 * @return a String representation of a Jeffrey RAM image
 	 */
-	public static String assemble(String source, int offset){
+	private static String assemble(String source, int offset){
 
 		Scanner infile = new Scanner(source);
 		
@@ -94,6 +127,7 @@ public class Assembler {
 			while(infile.hasNextLine()){
 				Scanner lineparser = new Scanner(infile.nextLine());
 				int instruction = 0;
+				//skip empty lines
 				if(!lineparser.hasNext()){
 					line++;
 					continue;
@@ -226,6 +260,7 @@ public class Assembler {
 				//place our parsed instruction into the binary file in hex
 				String outdata = String.format("%04X", instruction);
 				out.append(outdata + "\n");
+				lineparser.close();
 			}
 		}catch (ArrayIndexOutOfBoundsException e){
 			System.err.println("Error at line: " + line + " - Instruction or register not correct");
@@ -236,6 +271,7 @@ public class Assembler {
 		}
 
 		symboltable.clear();
+		infile.close();
 		
 		
 		return out.toString();
@@ -249,7 +285,7 @@ public class Assembler {
 	 * @param infile Scanner containing the text to be processed
 	 * @param offset int offset the file will start at. 0 for ROM code
 	 */
-	public static void preprocess(Scanner infile, int offset){
+	private static void preprocess(Scanner infile, int offset){
 		//preprocess to fill symboltable
 		int line = 0;
 		while(infile.hasNextLine()){
@@ -291,6 +327,7 @@ public class Assembler {
 				//every symbol refers to the line it stands for
 				line++;
 			}
+			preprocessor.close();
 		}
 		infile.close();
 	}
@@ -302,7 +339,7 @@ public class Assembler {
 	 * @param val the string to look for
 	 * @return the index of the string or -1 if not found
 	 */
-	public static int contains(String[] array, String val){
+	private static int contains(String[] array, String val){
 		if(val == null || array == null){
 			return -1;
 		}
