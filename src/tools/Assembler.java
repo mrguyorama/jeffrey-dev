@@ -7,6 +7,15 @@ import java.io.IOException;
 import java.util.Scanner;
 import java.util.TreeMap;
 
+
+/**
+ * This program is a utility to turn files written in Jeffrey Assembly into 
+ * files that can be understood by any compliant Jeffrey implementation. It
+ * includes useful methods and functionality in order to plug it into your
+ * own application if you so wish.
+ * @author Mrguyorama
+ *
+ */
 public class Assembler {
 	//No operands
 	static String Special[] = {"Jmp", "Fault"};
@@ -32,47 +41,57 @@ public class Assembler {
 	static int Registersval[] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 	//io
-	static final String  in = "src/assemblies/test.jef";
-	static final String romfile = "src/assemblies/rom.jef";
-	static final String outfile = "a.out";
+	static String  in = "src/assemblies/test.jef";
+	static String romfile = "src/assemblies/rom.jef";
+	static String romout = "rom.out";
+	static String outfile = "user.out";
 	/**
 	 * The location in memory where "Userland" starts
 	 */
 	static final int USERBASE = 0X4000;
 
 	public static TreeMap<String, Integer> symboltable = new TreeMap<String, Integer>();
-	public static void main(String[] args) throws IOException {
-		Scanner infile = new Scanner(new File(in));
-		FileWriter out = new FileWriter(new File(outfile));
-		
-		preprocess(new Scanner(new File(romfile)), 0);
-		
-		String finalinfile = "";
-		
-		if(args != null && args.length > 0 && args[0].equalsIgnoreCase("rom")){
-			System.out.println("romburn " + in);
-			finalinfile = romfile;
-		}else{
-			System.out.println("userprgm " + in);
-			finalinfile = in;
-			preprocess(infile, USERBASE);
+	public static void main(String[] args) {
+		System.out.println(System.getProperty("user.dir"));
+		if(args.length < 4){
+			System.out.println("Missing parameters");
+			System.out.println("Correct Usage: Usersource Romsource Romout Userout");
+			System.exit(1);
 		}
 
-		infile = new Scanner(new File(finalinfile));
-		
-		//extract the text to assemble
-		String sourcetext = new String();
-		while(infile.hasNextLine()){
-			sourcetext += infile.nextLine() + "\n";
+		//romfile
+		String romtext = null;
+		try{
+			romtext = read(args[1]);
+			FileWriter rombin = new FileWriter(args[2]);
+			rombin.write(assembleROM(romtext));
+			rombin.flush();
+			rombin.close();
+		}catch(FileNotFoundException e){
+			System.err.println("Unable to read ROM input file at: " + args[1]);
+			System.exit(1);
+		}catch(IOException e){
+			System.err.println("Unable to Create or Write to ROM output file at: " + args[2]);
+			System.exit(1);
 		}
 		
-		String assembly = new String();
-		assembly = assemble(sourcetext, USERBASE);
+		//userfile
+		String usertext = null;
+		try{
+			usertext = read(args[0]);
+			FileWriter userbin = new FileWriter(args[3]);
+			userbin.write(assembleUser(romtext, usertext));
+			userbin.flush();
+			userbin.close();
+		}catch(FileNotFoundException e){
+			System.err.println("Unable to read User input file at: " + args[0]);
+			System.exit(1);
+		}catch(IOException e){
+			System.err.println("Unable to Create or Write to User output file at: " + args[3]);
+			System.exit(1);
+		}
 		
-		out.write(assembly);
-		out.flush();
-		out.close();
-		infile.close();
+		System.out.println("Successfully assembled ROM and User files");
 		
 	}
 	
