@@ -1,6 +1,7 @@
 package tools;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
@@ -353,6 +354,23 @@ public class Assembler {
 			}
 		}
 		return i;
+	}
+	
+	/**
+	 * Returns the text content of the file at the given path
+	 * @param filepath String representation of the path of a file
+	 * @return String contents of file
+	 * @throws FileNotFoundException if the file is not found
+	 */
+	public static String read(String filepath) throws FileNotFoundException{
+		StringBuilder string = new StringBuilder();
+		File file = new File(filepath);
+		Scanner scanner = new Scanner(file);
+		while(scanner.hasNextLine()){
+			string.append(scanner.nextLine() + "\n");
+		}
+		scanner.close();
+		return string.toString();
 	}
 
 }
