@@ -33,7 +33,7 @@ public class Assembler {
 	//io
 	static final String  in = "src/assemblies/test.jef";
 	static final String romfile = "src/assemblies/rom.jef";
-	static final String outfile = "a.out";
+	static final String outfile = "TESTING.out";
 	static final int USERBASE = 0X4000;
 
 	public static TreeMap<String, Integer> symboltable = new TreeMap<String, Integer>();
@@ -55,11 +55,39 @@ public class Assembler {
 		}
 
 		infile = new Scanner(new File(finalinfile));
+		
+		//extract the text to assemble
+		String sourcetext = new String();
+		while(infile.hasNextLine()){
+			sourcetext += infile.nextLine() + "\n";
+		}
+		
+		String assembly = new String();
+		assembly = assemble(sourcetext, USERBASE);
+		
+		out.write(assembly);
+		out.flush();
+		out.close();
+		
+	}
+
+	
+	/**
+	 * Assembles the source file into a Jeffrey compatible binary
+	 * @param source String containing the source text to be assembled
+	 * @param offset int offset that the binary should start at ie 0X4000 for Userland and 0 for ROM
+	 * @return a String representation of a Jeffrey RAM image
+	 */
+	public static String assemble(String source, int offset){
+
+		Scanner infile = new Scanner(source);
+		
+		StringBuilder out = new StringBuilder();
 
 		//this is the header defined in the logisim "ram format"
 		//http://www.cburch.com/logisim/docs/2.7/en/html/guide/mem/menu.html
 		//we do not take advantage of run length encoding at this time
-		out.write("v2.0 raw\n");
+		out.append("v2.0 raw\n");
 
 		int line = 0;
 		try{
@@ -197,8 +225,7 @@ public class Assembler {
 
 				//place our parsed instruction into the binary file in hex
 				String outdata = String.format("%04X", instruction);
-				out.write(outdata + "\n");
-				out.flush();
+				out.append(outdata + "\n");
 			}
 		}catch (ArrayIndexOutOfBoundsException e){
 			System.err.println("Error at line: " + line + " - Instruction or register not correct");
@@ -208,13 +235,21 @@ public class Assembler {
 			e.printStackTrace();
 		}
 
-		out.close();
 		symboltable.clear();
+		
+		
+		return out.toString();
 	}
-
+	
+	
+	
+	
+	/**
+	 * Takes a first pass through the source file and makes note of references and other labels for later use
+	 * @param infile Scanner containing the text to be processed
+	 * @param offset int offset the file will start at. 0 for ROM code
+	 */
 	public static void preprocess(Scanner infile, int offset){
-
-
 		//preprocess to fill symboltable
 		int line = 0;
 		while(infile.hasNextLine()){
@@ -260,8 +295,7 @@ public class Assembler {
 		infile.close();
 	}
 	
-
-	//check if a string array contains a string and returns its position
+	
 	/**
 	 * Checks if a string array contains a string and returns its position or -1 otherwise
 	 * @param array the String array to check in
